@@ -11,8 +11,6 @@ import pickle
 
 def create_tax_tree(series, zeroflag=False):
     tempGraph = nx.Graph()
-    """workbook = load_workbook(filename="random_Otus.xlsx")
-    sheet = workbook.active"""
     valdict = {}
     bac = []
     for i, (tax, val) in enumerate(series.items()):
@@ -83,17 +81,31 @@ def find_joint_nodes_set(mom_collection):
             s.add(name)
     print("number of microbioms:", len(s))
 
-def create_graph_files_for_qgcn(mom_list, file_name_save):
-    f = open(file_name_save, "wt")
+
+def create_graph_files_for_qgcn(mom_list, graph_csv_file, external_data_file, microbiome_to_id_dict):
+    graph_csv_file = open(graph_csv_file + ".csv", "wt")
+    graph_csv_file.write("g_id,src,dst,label")
+    external_data_file = open(external_data_file + ".csv", "wt")
+    # external file header
+    external_data_file_header = "g_id,node"
+    for i in range(len(microbiome_to_id_dict)):
+        external_data_file_header += f',{i}'
+    # creation of the two files for qgcn
     for i, mom in enumerate(mom_list.mother_list):
         cur_graph = mom.microbiome_graph
-        nodes = cur_graph.nodes(data=True)
         edges = cur_graph.edges(data=False)
-        for u, v in cur_graph.edges(data=False):
+        nodes = cur_graph.nodes(data=False)
+        label = mom.sick_or_not
+        for u, v in edges:
             name1, value1 = u
             name2, value2 = v
+            line = f"{i},{name1},{name2},{label}"
+            graph_csv_file.write(line)
+        for name, value in nodes:
+            line = f"{i},{name}"
 
-    pass
+            external_data_file.write()
+    graph_csv_file.close()
 
 
 def load_taxonomy_file(file_name):
@@ -116,10 +128,12 @@ def load_mom_details_file(file_name):
             data.append(row_values)
     mapping_table_dataframe = pd.DataFrame(data[1:], columns=data[0])
     # mapping_table_dataframe = pd.read_excel(mapping_table, header=0)
-    mapping_table_dataframe = mapping_table_dataframe[1:]
+    # mapping_table_dataframe = mapping_table_dataframe[1:]
     mapping_table_dataframe.dropna(axis=1, inplace=True)
-    mapping_table_dataframe.rename(columns={"#SampleID": "ID"}, inplace=True)
+    mapping_table_dataframe.rename(columns={"#SampleID": "ID", "Control_GDM": "Tag"}, inplace=True)
+    mapping_table_dataframe.replace({"Tag": {"GDM": 1, "Control": 0}}, inplace=True)
 
+    mapping_table_dataframe = mapping_table_dataframe[["ID", "Tag"]]
     return mapping_table_dataframe
 
 
@@ -129,24 +143,13 @@ if __name__ == '__main__':
     mapping_table = os.path.join(path_data_dir, "israeli_stool_mapping_table.xlsx")
 
     all_moms_dataframe = load_taxonomy_file(taxonomy_file_name)
-    all_moms_dataframe.to_csv("taxonomy_for_mip_mlp.csv", index=False)
+    # all_moms_dataframe.to_csv("taxonomy_for_mip_mlp.csv")
     mapping_table_dataframe = load_mom_details_file(mapping_table)
-    mapping_table_dataframe.to_csv("tag_for_mip_mlp.csv", index=False)
+    # mapping_table_dataframe.to_csv("tag_for_mip_mlp.csv", index=False)
     # iterate_dataframe(all_moms_dataframe, mapping_table_dataframe, save_to_pickle=True)
 
-    # mom_list = pickle.load(open("mom_collection.p", "rb"))
-    # class point():
-    #     def __init__(self, x, y):
-    #         self.x = x
-    #         self.y = y
-    #
-    # G = nx.Graph()
-    # p0 = point(0, 0)
-    # p1 = point(1, 1)
-    #
-    # G.add_node(0, data=p0)
-    # G.add_node(1, data=p1)
-    # G.add_edge(0, 1, weight=4)
-    # create_graph_files_for_qgcn(mom_list, "microbiome_data_for_qgcn")
+    mom_list = pickle.load(open("mom_collection.p", "rb"))
+
+    create_graph_files_for_qgcn(mom_list, "microbiome_data_for_qgcn")
     # find_joint_nodes_set(mom_list)
     print()
