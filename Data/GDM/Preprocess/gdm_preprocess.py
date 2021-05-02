@@ -51,19 +51,19 @@ def iterate_dataframe(all_moms_dataframe, mapping_table_dataframe, save_to_pickl
     taxonomy_series = all_moms_dataframe.iloc[-1]
     for index, mom in mapping_table_dataframe.iterrows():
         print("index", index)
-        split_sample_id = mom['#SampleID'].split('-')
+        split_sample_id = mom['ID'].split('-')
         id = split_sample_id[0]
         test_way = split_sample_id[1]
         trimester = split_sample_id[2][-1]
         repetition = split_sample_id[-1]
-        sick_or_not = mom['Control_GDM']
+        sick_or_not = mom['Tag']
         data = []
         ind = []
         for i in range(all_moms_dataframe.shape[1]):
             microbiome_id = all_moms_dataframe.columns[i]
             ind.append(taxonomy_series[microbiome_id])
             data.append(all_moms_dataframe.iloc[index - 1][microbiome_id])
-        my_series = pd.Series(data, index=ind, dtype=int)
+        my_series = pd.Series(data, index=ind)
         microbiome_graph = create_tax_tree(my_series, zeroflag=True)
         mom_object = Mother(id, trimester, repetition, sick_or_not, microbiome_graph, test_way=test_way)
         mom_list.add_mom(mom_object)
@@ -80,15 +80,16 @@ def find_joint_nodes_set(mom_collection):
         for name, value in nodes:
             s.add(name)
     print("number of microbioms:", len(s))
+    return len(s)
 
 
-def create_graph_files_for_qgcn(mom_list, graph_csv_file, external_data_file, microbiome_to_id_dict):
+def create_graph_files_for_qgcn(mom_list, graph_csv_file, external_data_file, microbiom_len):
     graph_csv_file = open(graph_csv_file + ".csv", "wt")
     graph_csv_file.write("g_id,src,dst,label")
     external_data_file = open(external_data_file + ".csv", "wt")
     # external file header
     external_data_file_header = "g_id,node"
-    for i in range(len(microbiome_to_id_dict)):
+    for i in range(microbiom_len):
         external_data_file_header += f',{i}'
     # creation of the two files for qgcn
     for i, mom in enumerate(mom_list.mother_list):
@@ -104,17 +105,21 @@ def create_graph_files_for_qgcn(mom_list, graph_csv_file, external_data_file, mi
         for name, value in nodes:
             line = f"{i},{name}"
 
-            external_data_file.write()
+            external_data_file.write(line)
     graph_csv_file.close()
 
 
-def load_taxonomy_file(file_name):
-    all_moms_dataframe = pd.read_csv(file_name, delimiter='\t', header=1)
-    all_moms_dataframe = all_moms_dataframe.T
-    new_header = all_moms_dataframe.iloc[0]  # grab the first row for the header
-    all_moms_dataframe = all_moms_dataframe[1:]  # take the data less the header row
-    all_moms_dataframe.columns = new_header  # set the header row as the df header
-    all_moms_dataframe.index.name = 'ID'
+def load_taxonomy_file(file_name, delimeter='\t'):
+
+    if delimeter == '\t':
+        all_moms_dataframe = pd.read_csv(file_name, delimiter=delimeter, header=1)
+        all_moms_dataframe = all_moms_dataframe.T
+        new_header = all_moms_dataframe.iloc[0]  # grab the first row for the header
+        all_moms_dataframe = all_moms_dataframe[1:]  # take the data less the header row
+        all_moms_dataframe.columns = new_header  # set the header row as the df header
+        all_moms_dataframe.index.name = 'ID'
+    if delimeter == ',':
+        all_moms_dataframe = pd.read_csv(file_name, delimiter=delimeter, header=0)
     return all_moms_dataframe
 
 
@@ -139,17 +144,18 @@ def load_mom_details_file(file_name):
 
 if __name__ == '__main__':
     path_data_dir = os.path.join("..", "israel")
-    taxonomy_file_name = os.path.join(path_data_dir, "israel_stool_otu_with_taxonomy.tsv")
+    taxonomy_file_name = os.path.join(path_data_dir, "OTU_merged_Mucositis.csv")
     mapping_table = os.path.join(path_data_dir, "israeli_stool_mapping_table.xlsx")
 
-    all_moms_dataframe = load_taxonomy_file(taxonomy_file_name)
+    all_moms_dataframe = load_taxonomy_file(taxonomy_file_name, delimeter=',')
     # all_moms_dataframe.to_csv("taxonomy_for_mip_mlp.csv")
     mapping_table_dataframe = load_mom_details_file(mapping_table)
     # mapping_table_dataframe.to_csv("tag_for_mip_mlp.csv", index=False)
-    # iterate_dataframe(all_moms_dataframe, mapping_table_dataframe, save_to_pickle=True)
+    mom_list = iterate_dataframe(all_moms_dataframe, mapping_table_dataframe, save_to_pickle=True)
 
-    mom_list = pickle.load(open("mom_collection.p", "rb"))
+    # mom_list = pickle.load(open("mom_collection.p", "rb"))
+    total_number_of_microbioms = find_joint_nodes_set(mom_list)
+    # create_graph_files_for_qgcn(mom_list, "microbiome_data_for_qgcn", "external_microbiome_data_for_qgcn",
+    #                             total_number_of_microbioms)
 
-    create_graph_files_for_qgcn(mom_list, "microbiome_data_for_qgcn")
-    # find_joint_nodes_set(mom_list)
     print()
