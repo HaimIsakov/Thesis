@@ -59,11 +59,12 @@ def iterate_dataframe(all_moms_dataframe, mapping_table_dataframe, save_to_pickl
         sick_or_not = mom['Tag']
         data = []
         ind = []
-        for i in range(all_moms_dataframe.shape[1]):
-            microbiome_id = all_moms_dataframe.columns[i]
-            ind.append(taxonomy_series[microbiome_id])
-            data.append(all_moms_dataframe.iloc[index - 1][microbiome_id])
-        my_series = pd.Series(data, index=ind)
+        # for i in range(all_moms_dataframe.shape[1]):
+            # microbiome_id = all_moms_dataframe.columns[i]
+            # ind.append(taxonomy_series[microbiome_id])
+            # data.append(all_moms_dataframe.iloc[index - 1][microbiome_id])
+        # my_series = pd.Series(data, index=ind)
+        my_series = all_moms_dataframe.iloc[index]
         microbiome_graph = create_tax_tree(my_series, zeroflag=True)
         mom_object = Mother(id, trimester, repetition, sick_or_not, microbiome_graph, test_way=test_way)
         mom_list.add_mom(mom_object)
@@ -120,6 +121,7 @@ def load_taxonomy_file(file_name, delimeter='\t'):
         all_moms_dataframe.index.name = 'ID'
     if delimeter == ',':
         all_moms_dataframe = pd.read_csv(file_name, delimiter=delimeter, header=0)
+        all_moms_dataframe.set_index('ID', inplace=True)
     return all_moms_dataframe
 
 
