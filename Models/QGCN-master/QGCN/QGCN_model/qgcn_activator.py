@@ -359,7 +359,7 @@ class QGCNActivator:
                 loss = self._loss_func(output, label.unsqueeze(dim=1).float(), weight=torch.Tensor([self._loss_weights[i].item() for i in label]).unsqueeze(dim=1).to(device=self._device))\
                     if self._is_binary else self._loss_func(output, label, weight=self._loss_weights.to(device=self._device))
                 # calculate loss
-                l1_lambda = 0
+                l1_lambda = 100
                 l1_penalty = sum([p.abs().sum() for p in self._model.parameters()])
                 # print(f"\nloss {loss}")
                 # print(f"\nl1 penalty {l1_penalty}")

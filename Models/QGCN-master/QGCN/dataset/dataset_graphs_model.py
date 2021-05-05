@@ -249,7 +249,7 @@ class GraphsDataset(Dataset):
         ext_data_id = "None" if not self._is_external_data else "_embed_ftr_" + "_".join(self._external_data.embed_headers)\
                                                                 + "_continuous_ftr_" + "_".join(self._external_data.continuous_headers) \
                                                                 + "standardization_" + self._params["standardization"]
-        pkl_path = os.path.join(self._base_dir, PKL_DIR, self._dataset_name + ext_data_id + "_data.pkl")
+        pkl_path = os.path.join(self._base_dir, PKL_DIR, self._dataset_name + "_data.pkl")
         if os.path.exists(pkl_path):
             return pickle.load(open(pkl_path, "rb"))
         data = {}
