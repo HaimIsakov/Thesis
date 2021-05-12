@@ -359,11 +359,11 @@ class QGCNActivator:
                 loss = self._loss_func(output, label.unsqueeze(dim=1).float(), weight=torch.Tensor([self._loss_weights[i].item() for i in label]).unsqueeze(dim=1).to(device=self._device))\
                     if self._is_binary else self._loss_func(output, label, weight=self._loss_weights.to(device=self._device))
                 # calculate loss
-                l1_lambda = 100
-                l1_penalty = sum([p.abs().sum() for p in self._model.parameters()])
+                # l1_lambda = 100
+                # l1_penalty = sum([p.abs().sum() for p in self._model.parameters()])
                 # print(f"\nloss {loss}")
                 # print(f"\nl1 penalty {l1_penalty}")
-                loss = loss + l1_lambda * l1_penalty
+                # loss = loss + l1_lambda * l1_penalty
                 loss.backward()  # back propagation
 
                 # if (batch_index + 1) % self._batch_size == 0 or (batch_index + 1) == len_data:  # batching

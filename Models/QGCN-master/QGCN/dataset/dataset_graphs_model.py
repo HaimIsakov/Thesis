@@ -195,16 +195,16 @@ class GraphsDataset(Dataset):
         all_data_continuous_vec = np.vstack(all_data_continuous_vec)
 
         # z-score data
-        # if self._params["standardization"] == "zscore":
-        #     standardized_data = zscore(all_data_continuous_vec, axis=0)
-        # # scale data (still hasn't bee implemented)
-        # elif self._params["standardization"] == "scale":
-        #     pass
-        # # min-max data
-        # elif self._params["standardization"] == "min_max":
-        #     scalar = MinMaxScaler()
-        #     standardized_data = scalar.fit_transform(all_data_continuous_vec)
-        standardized_data = all_data_continuous_vec
+        if self._params["standardization"] == "zscore":
+            standardized_data = zscore(np.asarray(all_data_continuous_vec), axis=0)
+        # scale data (still hasn't bee implemented)
+        elif self._params["standardization"] == "scale":
+            pass
+        # min-max data
+        elif self._params["standardization"] == "min_max":
+            scalar = MinMaxScaler()
+            standardized_data = scalar.fit_transform(all_data_continuous_vec)
+        # standardized_data = all_data_continuous_vec
 
         # rebuild data to original form -> split stacked matrix according to <list: (g_id, num_nodes)>
         new_data_dict = {}
