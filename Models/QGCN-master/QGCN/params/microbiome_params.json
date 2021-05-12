@@ -19,6 +19,6 @@
               ]
   },
 
-  "activator" : {"epochs": 500, "batch_size": 124, "loss_func": "binary_cross_entropy_with_logits_",
+  "activator" : {"epochs": 10, "batch_size": 124, "loss_func": "binary_cross_entropy_with_logits_",
     "train": 0.675, "dev": 0.125, "test": 0.2}
 }

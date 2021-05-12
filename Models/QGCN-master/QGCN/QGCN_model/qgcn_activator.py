@@ -29,9 +29,12 @@ sys.path.insert(1, os.path.join(cwd, "..", "..", "graphs-package", "temporal_gra
 sys.path.insert(1, os.path.join(cwd, "..", "..", "graphs-package", "features_processor", "motif_variations"))
 sys.path.insert(1, os.path.join(cwd, "..", "..", "graphs-package"))
 
+
+from datetime import datetime
 import torch
 from sklearn.metrics import roc_auc_score
 from bokeh.plotting import figure, show
+from bokeh.io import export_png
 from torch.nn.functional import binary_cross_entropy_with_logits, cross_entropy
 from torch.utils.data import DataLoader, random_split, SubsetRandomSampler
 from collections import Counter
@@ -227,6 +230,7 @@ class QGCNActivator:
         p.line(x_axis, y_axis_test, line_color=color3, legend="test")
         if show_plot:
             show(p)
+        export_png(p, filename=datetime.today().strftime('%Y-%m-%d-%H:%M:%S')+'.png')
         return p
 
     def _plot_acc_dev(self):
