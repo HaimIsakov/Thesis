@@ -7,6 +7,8 @@ import csv
 import json
 import os
 from sys import stdout
+
+import matplotlib.pyplot as plt
 import nni
 from time import sleep
 import sys
@@ -34,7 +36,7 @@ from datetime import datetime
 import torch
 from sklearn.metrics import roc_auc_score
 from bokeh.plotting import figure, show
-from bokeh.io import export_png
+import pickle
 from torch.nn.functional import binary_cross_entropy_with_logits, cross_entropy
 from torch.utils.data import DataLoader, random_split, SubsetRandomSampler
 from collections import Counter
@@ -230,15 +232,14 @@ class QGCNActivator:
         p.line(x_axis, y_axis_test, line_color=color3, legend="test")
         if show_plot:
             show(p)
-        export_png(p, filename=datetime.today().strftime('%Y-%m-%d-%H:%M:%S')+'.png')
         return p
 
     def _plot_acc_dev(self):
         self.plot_line(ACCURACY_PLOT)
         sleep(1)
-        self.plot_line(ACCURACY_PLOT)
+        self.plot_line(AUC_PLOT)
         sleep(1)
-        self.plot_line(ACCURACY_PLOT)
+        self.plot_line(LOSS_PLOT)
 
     def output_experiment_detail(self, res_path):
         exp = nni.get_experiment_id()
@@ -434,7 +435,44 @@ class QGCNActivator:
         if self._is_binary:
             self._update_auc(pred, true_labels, job=job)
         return loss
-    
+
+    def plot_measurement(self, root, measurement=LOSS_PLOT):
+        date = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
+        if measurement == LOSS_PLOT:
+            plt.plot(range(self._epochs), self._loss_vec_train, label=TRAIN_JOB, color='b')
+            plt.plot(range(self._epochs), self._loss_vec_dev, label=VALIDATE_JOB, color='r')
+            plt.plot(range(self._epochs), self._loss_vec_test, label=TEST_JOB, color='g')
+            plt.legend(loc='best')
+            # plt.savefig(os.path.join(root, f'loss_plot_{date}.png'))
+            plt.savefig(f'loss_plot_{date}.png')
+            # plt.clf()
+
+        if measurement == ACCURACY_PLOT:
+            max_acc_test = np.max(self._accuracy_vec_test)
+            plt.plot(range(self._epochs), self._accuracy_vec_train, label=TRAIN_JOB, color='b')
+            plt.plot(range(self._epochs), self._accuracy_vec_dev, label=VALIDATE_JOB, color='r')
+            plt.plot(range(self._epochs), self._accuracy_vec_test, label=TEST_JOB, color='g')
+            plt.legend(loc='best')
+            # plt.savefig(os.path.join(root, f'acc_plot_{date}_max_{round(max_acc_test, 2)}.png'))
+            plt.savefig(f'acc_plot_{date}_max_{round(max_acc_test, 2)}.png')
+            # plt.clf()
+
+        if measurement == AUC_PLOT:
+            max_auc_test = np.max(self._auc_vec_test)
+            plt.plot(range(self._epochs), self._auc_vec_train, label=TRAIN_JOB, color='b')
+            plt.plot(range(self._epochs), self._auc_vec_dev, label=VALIDATE_JOB, color='r')
+            plt.plot(range(self._epochs), self._auc_vec_test, label=TEST_JOB, color='g')
+            plt.legend(loc='best')
+            # plt.savefig(os.path.join(root, f'auc_plot_{date}_max_{round(max_auc_test, 2)}.png'))
+            plt.savefig(f'auc_plot_{date}_max_{round(max_auc_test, 2)}.png')
+            # plt.clf()
+
+
+    def plot_acc_loss_auc(self, root):
+        self.plot_measurement(LOSS_PLOT, root)
+        self.plot_measurement(ACCURACY_PLOT, root)
+        self.plot_measurement(AUC_PLOT, root)
+
 
 if __name__ == '__main__':
     from dataset.dataset_external_data import ExternalData
@@ -449,11 +487,15 @@ if __name__ == '__main__':
     ds = GraphsDataset(params_file, external_data=ext_train)
     model = QGCN(params_file, ds.len_features, ext_train.len_embed())
     activator = QGCNActivator(model, params_file, ds)
-    activator.train()
-    
+    activator.train(show_plot=False)
+    root_for_plots = "../Results"
+    activator.plot_acc_loss_auc(root_for_plots)
+    date = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
+    # pickle.dump(activator.model(), open(f"model_{date}.p", "wb"))
+
     # If your data does not have external information
-    params_file = "../params/default_no_external_data_params.json"  # put here your params file
-    ds = GraphsDataset(params_file, external_data=None)
-    model = QGCN(params_file, ds.len_features, [10])
-    activator = QGCNActivator(model, params_file, ds)
-    activator.train()
+    # params_file = "../params/default_no_external_data_params.json"  # put here your params file
+    # ds = GraphsDataset(params_file, external_data=None)
+    # model = QGCN(params_file, ds.len_features, [10])
+    # activator = QGCNActivator(model, params_file, ds)
+    # activator.train()
