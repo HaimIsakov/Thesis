@@ -1,7 +1,4 @@
-import copy
-
-import pandas as pd
-import numpy as np
+﻿import pandas as pd
 from Mother import *
 from MotherCollection import *
 import networkx as nx
@@ -10,7 +7,7 @@ import os
 from openpyxl import load_workbook
 import pickle
 
-
+# function from Ariel Rozen
 def create_tax_tree(series, zeroflag=False):
     tempGraph = nx.Graph()
     valdict = {}
@@ -76,33 +73,37 @@ def iterate_dataframe(all_moms_dataframe, mapping_table_dataframe, save_to_pickl
 
 
 def find_joint_nodes_set(mom_collection):
+    """Return a dictionary that maps each microbiome to a unique id"""
     microbiome_dict = {}
-    i = 0
     s = set()
     for mom in mom_collection.mother_list:
         cur_graph = mom.microbiome_graph
         nodes = cur_graph.nodes(data=False)
         for name, value in nodes:
             s.add(name)
+    i = 0
     for microbiome in s:
         microbiome_dict[microbiome] = i
         i += 1
-    print("number of microbioms:", len(s))
+    print("Number of microbioms:", len(s))
     return microbiome_dict
 
 
 def create_graph_files_for_qgcn(mom_list, graph_csv_file, external_data_file, microbiome_dict):
-    graph_csv_file = open(graph_csv_file + ".csv", "wt")
-    graph_csv_file.write("g_id,src,dst,label\n")
-    external_data_file = open(external_data_file + ".csv", "wt")
-    # external file header
-    external_data_file_header = "g_id,node"
+    type_file = '.csv'
+    graph_csv_file = open(graph_csv_file + type_file, "wt")
+    external_data_file = open(external_data_file + type_file, "wt")
+    # header of files
+    graph_header = "g_id,src,dst,label\n"
+    graph_csv_file.write(graph_header)
+    external_data_header = "g_id,node"
+    # we need to add column for each microbiome, in order to keep our one-hot vector idea
     microbiom_len = len(microbiome_dict)
     for i in range(microbiom_len):
-        external_data_file_header += f',{i}'
-    external_data_file_header += '\n'
-    external_data_file.write(external_data_file_header)
-    # creation of the two files for qgcn
+        external_data_header += f',{i}'
+    external_data_header += '\n'
+    external_data_file.write(external_data_header)
+    # creation of the two files for qgcn - graph file, and external data graph file
     for i, mom in enumerate(mom_list.mother_list):
         cur_graph = mom.microbiome_graph
         edges = cur_graph.edges(data=False)
@@ -119,23 +120,26 @@ def create_graph_files_for_qgcn(mom_list, graph_csv_file, external_data_file, mi
             one_hot = [0 if j != microbiome_id else value for j in range(microbiom_len)]
             line += ''.join(',' + str(e) for e in one_hot)
             line += '\n'
-
             external_data_file.write(line)
     graph_csv_file.close()
     external_data_file.close()
 
 
+def selection_criterion():
+    return lambda x: x.microbiome_graph.number_of_nodes() >= 10 and int(x.trimester) > 2
+
+
 def drop_instances_from_mom_list(mom_list):
-    selection = lambda x: x.microbiome_graph.number_of_nodes() >= 10 and int(x.trimester) > 2
+    selection = selection_criterion()
     # copy_mom_list = copy.deepcopy(mom_list)
     mom_list = [mom for mom in mom_list.mother_list if selection(mom)]
     new_mom_list = MotherCollection()
-    [new_mom_list.add_mom(mom) for mom in mom_list]
+    new_mom_list.add_moms(mom_list)
+    # [new_mom_list.add_mom(mom) for mom in mom_list]
     return new_mom_list
 
 
 def load_taxonomy_file(file_name, delimeter='\t'):
-
     if delimeter == '\t':
         all_moms_dataframe = pd.read_csv(file_name, delimiter=delimeter, header=1)
         all_moms_dataframe = all_moms_dataframe.T
@@ -168,20 +172,26 @@ def load_mom_details_file(file_name):
     return mapping_table_dataframe
 
 
-if __name__ == '__main__':
-    path_data_dir = os.path.join("..", "israel")
-    taxonomy_file_name = os.path.join(path_data_dir, "OTU_merged_Mucositis.csv")
-    mapping_table = os.path.join(path_data_dir, "israeli_stool_mapping_table.xlsx")
-
-    # all_moms_dataframe = load_taxonomy_file(taxonomy_file_name, delimeter=',')
-    # all_moms_dataframe.to_csv("taxonomy_for_mip_mlp.csv")
-    # mapping_table_dataframe = load_mom_details_file(mapping_table)
-    # mapping_table_dataframe.to_csv("tag_for_mip_mlp.csv", index=False)
-    # mom_list = iterate_dataframe(all_moms_dataframe, mapping_table_dataframe, save_to_pickle=True)
+def create_moms_list_for_files_for_qgcn(taxonomy_file_name, mapping_table_file_name, ready_pickle=True):
+    # The taxonomy file is after MIP-MLP site Preprocess
+    all_moms_dataframe = load_taxonomy_file(taxonomy_file_name, delimeter=',')
+    all_moms_dataframe.to_csv("taxonomy_gdm_file.csv")
+    mapping_table_dataframe = load_mom_details_file(mapping_table)
+    mapping_table_dataframe.to_csv("tag_gdm_file.csv", index=False)
+    if not ready_pickle:
+        mom_list = iterate_dataframe(all_moms_dataframe, mapping_table_dataframe, save_to_pickle=True)
 
     mom_list = pickle.load(open("mom_collection.p", "rb"))
+    # find the number of all different nodes in all graphs
     microbiome_dict = find_joint_nodes_set(mom_list)
     mom_list = drop_instances_from_mom_list(mom_list)
-    create_graph_files_for_qgcn(mom_list, "microbiome_data_for_qgcn", "external_microbiome_data_for_qgcn", microbiome_dict)
-    positive = mom_list.return_positive()
-    print()
+    create_graph_files_for_qgcn(mom_list, "microbiome_data_for_qgcn", "external_microbiome_data_for_qgcn",
+                                microbiome_dict)
+
+
+if __name__ == '__main__':
+    path_data_dir = os.path.join("..", "israel")
+    # OTU_merged_Mucositis.csv file is after MIP-MLP site
+    taxonomy_file_name = os.path.join(path_data_dir, "OTU_merged_Mucositis.csv")
+    mapping_table = os.path.join(path_data_dir, "israeli_stool_mapping_table.xlsx")
+    create_moms_list_for_files_for_qgcn(taxonomy_file_name, mapping_table)

@@ -51,6 +51,7 @@ VALIDATE_JOB = "VALIDATE"
 LOSS_PLOT = "loss"
 AUC_PLOT = "AUC"
 ACCURACY_PLOT = "accuracy"
+Date = datetime.today().strftime('%Y_%m_%d_%H_%M_%S')
 
 binary_cross_entropy_with_logits_ = binary_cross_entropy_with_logits
 cross_entropy_ = cross_entropy
@@ -437,41 +438,43 @@ class QGCNActivator:
         return loss
 
     def plot_measurement(self, root, measurement=LOSS_PLOT):
-        date = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
+
         if measurement == LOSS_PLOT:
-            plt.plot(range(self._epochs), self._loss_vec_train, label=TRAIN_JOB, color='b')
-            plt.plot(range(self._epochs), self._loss_vec_dev, label=VALIDATE_JOB, color='r')
-            plt.plot(range(self._epochs), self._loss_vec_test, label=TEST_JOB, color='g')
+            plt.plot(range(len(self._loss_vec_train)), self._loss_vec_train, label=TRAIN_JOB, color='b')
+            plt.plot(range(len(self._loss_vec_dev)), self._loss_vec_dev, label=VALIDATE_JOB, color='r')
+            plt.plot(range(len(self._loss_vec_test)), self._loss_vec_test, label=TEST_JOB, color='g')
             plt.legend(loc='best')
-            # plt.savefig(os.path.join(root, f'loss_plot_{date}.png'))
-            plt.savefig(f'loss_plot_{date}.png')
-            # plt.clf()
+            plt.savefig(os.path.join(root, f'loss_plot_{Date}.png'))
+            plt.clf()
 
         if measurement == ACCURACY_PLOT:
             max_acc_test = np.max(self._accuracy_vec_test)
-            plt.plot(range(self._epochs), self._accuracy_vec_train, label=TRAIN_JOB, color='b')
-            plt.plot(range(self._epochs), self._accuracy_vec_dev, label=VALIDATE_JOB, color='r')
-            plt.plot(range(self._epochs), self._accuracy_vec_test, label=TEST_JOB, color='g')
+            plt.plot(range(len(self._accuracy_vec_train)), self._accuracy_vec_train, label=TRAIN_JOB, color='b')
+            plt.plot(range(len(self._accuracy_vec_dev)), self._accuracy_vec_dev, label=VALIDATE_JOB, color='r')
+            plt.plot(range(len(self._accuracy_vec_test)), self._accuracy_vec_test, label=TEST_JOB, color='g')
             plt.legend(loc='best')
-            # plt.savefig(os.path.join(root, f'acc_plot_{date}_max_{round(max_acc_test, 2)}.png'))
-            plt.savefig(f'acc_plot_{date}_max_{round(max_acc_test, 2)}.png')
-            # plt.clf()
+            plt.savefig(os.path.join(root, f'acc_plot_{Date}_max_{round(max_acc_test, 2)}.png'))
+            plt.clf()
 
         if measurement == AUC_PLOT:
             max_auc_test = np.max(self._auc_vec_test)
-            plt.plot(range(self._epochs), self._auc_vec_train, label=TRAIN_JOB, color='b')
-            plt.plot(range(self._epochs), self._auc_vec_dev, label=VALIDATE_JOB, color='r')
-            plt.plot(range(self._epochs), self._auc_vec_test, label=TEST_JOB, color='g')
+            plt.plot(range(len(self._auc_vec_train)), self._auc_vec_train, label=TRAIN_JOB, color='b')
+            plt.plot(range(len(self._auc_vec_dev)), self._auc_vec_dev, label=VALIDATE_JOB, color='r')
+            plt.plot(range(len(self._auc_vec_test)), self._auc_vec_test, label=TEST_JOB, color='g')
             plt.legend(loc='best')
-            # plt.savefig(os.path.join(root, f'auc_plot_{date}_max_{round(max_auc_test, 2)}.png'))
-            plt.savefig(f'auc_plot_{date}_max_{round(max_auc_test, 2)}.png')
-            # plt.clf()
+            plt.savefig(os.path.join(root, f'auc_plot_{Date}_max_{round(max_auc_test, 2)}.png'))
+            plt.clf()
 
-
-    def plot_acc_loss_auc(self, root):
-        self.plot_measurement(LOSS_PLOT, root)
-        self.plot_measurement(ACCURACY_PLOT, root)
-        self.plot_measurement(AUC_PLOT, root)
+    def plot_acc_loss_auc(self, root, save_model=True):
+        root = os.path.join(root, f'Qgcn_model_{Date}')
+        os.mkdir(root)
+        self.plot_measurement(root, LOSS_PLOT)
+        self.plot_measurement(root, ACCURACY_PLOT)
+        self.plot_measurement(root, AUC_PLOT)
+        # TODO: Fix the saving of the model
+        if save_model:
+            model_path = os.path.join(root, f"qgcn_model_{Date}.p")
+            pickle.dump(self.model().state_dict(), open(f"{model_path}", "wb"))
 
 
 if __name__ == '__main__':
@@ -487,11 +490,10 @@ if __name__ == '__main__':
     ds = GraphsDataset(params_file, external_data=ext_train)
     model = QGCN(params_file, ds.len_features, ext_train.len_embed())
     activator = QGCNActivator(model, params_file, ds)
-    activator.train(show_plot=False)
-    root_for_plots = "../Results"
-    activator.plot_acc_loss_auc(root_for_plots)
-    date = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
-    # pickle.dump(activator.model(), open(f"model_{date}.p", "wb"))
+    print("start training")
+    activator.train(show_plot=False, early_stop=True)
+    root_for_results = os.path.abspath(os.path.join(__file__, "../../../../../Results/QGCN"))
+    activator.plot_acc_loss_auc(root_for_results, save_model=False)
 
     # If your data does not have external information
     # params_file = "../params/default_no_external_data_params.json"  # put here your params file
@@ -499,3 +501,6 @@ if __name__ == '__main__':
     # model = QGCN(params_file, ds.len_features, [10])
     # activator = QGCNActivator(model, params_file, ds)
     # activator.train()
+
+    # two_up =  os.path.abspath(os.path.join(__file__ ,"../.."))
+
