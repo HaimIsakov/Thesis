@@ -1,6 +1,36 @@
 import pandas as pd
 import os
+from Data1.GDM.Preprocess.MotherCollection import *
 
+def selection_criterion():
+    return lambda x: x.microbiome_graph.number_of_nodes() >= 10 and int(x.trimester) > 2
+
+
+def drop_instances_from_mom_list(mom_list):
+    selection = selection_criterion()
+    # copy_mom_list = copy.deepcopy(mom_list)
+    mom_list = [mom for mom in mom_list.mother_list if selection(mom)]
+    new_mom_list = MotherCollection()
+    new_mom_list.add_moms(mom_list)
+    # [new_mom_list.add_mom(mom) for mom in mom_list]
+    return new_mom_list
+
+
+def find_joint_nodes_set(mom_collection):
+    """Return a dictionary that maps each microbiome to a unique id"""
+    microbiome_dict = {}
+    s = set()
+    for mom in mom_collection.mother_list:
+        cur_graph = mom.microbiome_graph
+        nodes = cur_graph.nodes(data=False)
+        for name, value in nodes:
+            s.add(name)
+    i = 0
+    for microbiome in s:
+        microbiome_dict[microbiome] = i
+        i += 1
+    print("Number of microbioms:", len(s))
+    return microbiome_dict
 
 def merge_file(file1, file2):
     df1 = pd.read_excel(file1, header=0)

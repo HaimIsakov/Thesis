@@ -1,4 +1,5 @@
 ﻿import pandas as pd
+from Data1.GDM.Preprocess.utils import drop_instances_from_mom_list, find_joint_nodes_set
 from Mother import *
 from MotherCollection import *
 import networkx as nx
@@ -72,23 +73,6 @@ def iterate_dataframe(all_moms_dataframe, mapping_table_dataframe, save_to_pickl
     return mom_list
 
 
-def find_joint_nodes_set(mom_collection):
-    """Return a dictionary that maps each microbiome to a unique id"""
-    microbiome_dict = {}
-    s = set()
-    for mom in mom_collection.mother_list:
-        cur_graph = mom.microbiome_graph
-        nodes = cur_graph.nodes(data=False)
-        for name, value in nodes:
-            s.add(name)
-    i = 0
-    for microbiome in s:
-        microbiome_dict[microbiome] = i
-        i += 1
-    print("Number of microbioms:", len(s))
-    return microbiome_dict
-
-
 def create_graph_files_for_qgcn(mom_list, graph_csv_file, external_data_file, microbiome_dict):
     type_file = '.csv'
     graph_csv_file = open(graph_csv_file + type_file, "wt")
@@ -125,20 +109,6 @@ def create_graph_files_for_qgcn(mom_list, graph_csv_file, external_data_file, mi
     external_data_file.close()
 
 
-def selection_criterion():
-    return lambda x: x.microbiome_graph.number_of_nodes() >= 10 and int(x.trimester) > 2
-
-
-def drop_instances_from_mom_list(mom_list):
-    selection = selection_criterion()
-    # copy_mom_list = copy.deepcopy(mom_list)
-    mom_list = [mom for mom in mom_list.mother_list if selection(mom)]
-    new_mom_list = MotherCollection()
-    new_mom_list.add_moms(mom_list)
-    # [new_mom_list.add_mom(mom) for mom in mom_list]
-    return new_mom_list
-
-
 def load_taxonomy_file(file_name, delimeter='\t'):
     if delimeter == '\t':
         all_moms_dataframe = pd.read_csv(file_name, delimiter=delimeter, header=1)
@@ -171,14 +141,13 @@ def load_mom_details_file(file_name):
     mapping_table_dataframe = mapping_table_dataframe[["ID", "Tag"]]
     return mapping_table_dataframe
 
-
 def create_moms_list_for_files_for_qgcn(taxonomy_file_name, mapping_table_file_name, ready_pickle=True):
-    # The taxonomy file is after MIP-MLP site Preprocess
-    all_moms_dataframe = load_taxonomy_file(taxonomy_file_name, delimeter=',')
-    all_moms_dataframe.to_csv("taxonomy_gdm_file.csv")
-    mapping_table_dataframe = load_mom_details_file(mapping_table)
-    mapping_table_dataframe.to_csv("tag_gdm_file.csv", index=False)
     if not ready_pickle:
+        # The taxonomy file is after MIP-MLP site Preprocess
+        all_moms_dataframe = load_taxonomy_file(taxonomy_file_name, delimeter=',')
+        all_moms_dataframe.to_csv("taxonomy_gdm_file.csv")
+        mapping_table_dataframe = load_mom_details_file(mapping_table)
+        mapping_table_dataframe.to_csv("tag_gdm_file.csv", index=False)
         mom_list = iterate_dataframe(all_moms_dataframe, mapping_table_dataframe, save_to_pickle=True)
 
     mom_list = pickle.load(open("mom_collection.p", "rb"))
