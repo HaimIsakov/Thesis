@@ -1,0 +1,8 @@
+{
+  "model": {"label_type": "binary", "num_classes": 2, "activation": "tanh_", "dropout": 0, "lr": 1e-4,
+    "optimizer": "ADAM", "L2_regularization": 1e-7, "L1_regularization": 1e-7
+  },
+
+  "activator" : {"epochs": 20, "batch_size": 128, "loss_func": "binary_cross_entropy_with_logits_",
+    "train": 0.675, "dev": 0.125, "test": 0.2, "cuda_device_number": "0"}
+}
