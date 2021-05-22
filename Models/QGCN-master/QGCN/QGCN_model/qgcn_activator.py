@@ -437,7 +437,7 @@ class QGCNActivator:
             self._update_auc(pred, true_labels, job=job)
         return loss
 
-     def plot_measurement(self, root, date, measurement=LOSS_PLOT):
+    def plot_measurement(self, root, date, measurement=LOSS_PLOT):
         if measurement == LOSS_PLOT:
             plt.plot(range(len(self._loss_vec_train)), self._loss_vec_train, label=TRAIN_JOB, color='b')
             plt.plot(range(len(self._loss_vec_dev)), self._loss_vec_dev, label=VALIDATE_JOB, color='r')

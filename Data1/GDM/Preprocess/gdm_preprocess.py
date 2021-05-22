@@ -138,7 +138,7 @@ def load_mom_details_file(file_name):
     mapping_table_dataframe.rename(columns={"#SampleID": "ID", "Control_GDM": "Tag"}, inplace=True)
     mapping_table_dataframe.replace({"Tag": {"GDM": 1, "Control": 0}}, inplace=True)
 
-    mapping_table_dataframe = mapping_table_dataframe[["ID", "Tag"]]
+    mapping_table_dataframe = mapping_table_dataframe[["ID", "Tag", 'trimester']]
     return mapping_table_dataframe
 
 def create_moms_list_for_files_for_qgcn(taxonomy_file_name, mapping_table_file_name, ready_pickle=True):
@@ -146,11 +146,14 @@ def create_moms_list_for_files_for_qgcn(taxonomy_file_name, mapping_table_file_n
         # The taxonomy file is after MIP-MLP site Preprocess
         all_moms_dataframe = load_taxonomy_file(taxonomy_file_name, delimeter=',')
         all_moms_dataframe.to_csv("taxonomy_gdm_file.csv")
-        mapping_table_dataframe = load_mom_details_file(mapping_table)
+        mapping_table_dataframe = load_mom_details_file(mapping_table_file_name)
         mapping_table_dataframe.to_csv("tag_gdm_file.csv", index=False)
-        mom_list = iterate_dataframe(all_moms_dataframe, mapping_table_dataframe, save_to_pickle=True)
+        mom_list = iterate_dataframe(all_moms_dataframe, mapping_table_dataframe, save_to_pickle=False)
+        # mom_list = drop_instances_from_mom_list(mom_list)
+        # a = 5
 
     mom_list = pickle.load(open("mom_collection.p", "rb"))
+
     # find the number of all different nodes in all graphs
     microbiome_dict = find_joint_nodes_set(mom_list)
     mom_list = drop_instances_from_mom_list(mom_list)
@@ -163,4 +166,4 @@ if __name__ == '__main__':
     # OTU_merged_Mucositis.csv file is after MIP-MLP site
     taxonomy_file_name = os.path.join(path_data_dir, "OTU_merged_Mucositis.csv")
     mapping_table = os.path.join(path_data_dir, "israeli_stool_mapping_table.xlsx")
-    create_moms_list_for_files_for_qgcn(taxonomy_file_name, mapping_table)
+    create_moms_list_for_files_for_qgcn(taxonomy_file_name, mapping_table, ready_pickle=False)

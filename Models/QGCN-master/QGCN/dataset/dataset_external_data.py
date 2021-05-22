@@ -84,11 +84,11 @@ class ExternalData:
         for index, data in external_data_df.iterrows():
             # extract data
 
-            # g_id = str(int(data[self._params["graph_col"]]))
-            # node = str(int(data[self._params["node_col"]]))
+            g_id = str(int(data[self._params["graph_col"]]))
+            node = str(int(data[self._params["node_col"]]))
             #
-            g_id = str(data[self._params["graph_col"]])
-            node = str(data[self._params["node_col"]])
+            # g_id = str(data[self._params["graph_col"]])
+            # node = str(data[self._params["node_col"]])
 
             # extract embeddings + keep list idx to embed symbol for each feature
             embed_list = []

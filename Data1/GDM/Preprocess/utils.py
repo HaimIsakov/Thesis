@@ -3,7 +3,8 @@ import os
 from Data1.GDM.Preprocess.MotherCollection import *
 
 def selection_criterion():
-    return lambda x: x.microbiome_graph.number_of_nodes() >= 10 and int(x.trimester) > 2
+    # return lambda x: x.microbiome_graph.number_of_nodes() >= 10 and int(x.trimester) > 2
+    return lambda x: int(x.trimester) > 2
 
 
 def drop_instances_from_mom_list(mom_list):
