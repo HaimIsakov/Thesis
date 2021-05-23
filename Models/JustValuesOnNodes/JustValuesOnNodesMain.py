@@ -5,7 +5,8 @@ import nni
 from JustValuesOnNodesClass import *
 from dataset_class_just_values_on_nodes import *
 from torch.utils.data import DataLoader, random_split
-
+import matplotlib.pyplot as plt
+import os
 LOG = logging.getLogger('nni_logger')
 
 try:
@@ -16,7 +17,7 @@ try:
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     samples_len = len(dataset)
     data_size = dataset.get_vector_size()
-    epochs = 10
+    epochs = 1000
 
     # calculate lengths off train and dev according to split ~ (0,1)
     len_train = int(samples_len * 0.675)
@@ -28,7 +29,7 @@ try:
 
     # set train loader
     train_loader = DataLoader(
-        train.dataset,
+        train,
         batch_size=batch_size,
         shuffle=True
     )
@@ -36,26 +37,38 @@ try:
     loss_weights = [1 / count_zeros, 1 / count_ones]
     # set validation loader
     dev_loader = DataLoader(
-        validate.dataset,
+        validate,
         batch_size=batch_size
     )
 
     # set test loader
     test_loader = DataLoader(
-        test.dataset,
+        test,
         batch_size=batch_size,
     )
 
     model = JustValuesOnNodes(data_size, RECEIVED_PARAMS)
     model = model.to(device)
 
-    my_train(model, RECEIVED_PARAMS, epochs, train_loader, device, loss_weights)
+    train_loss, test_loss_vec, test_auc = my_train(model, RECEIVED_PARAMS, epochs, train_loader,test_loader, device, loss_weights)
+    plt.plot(range(len(train_loss)), train_loss, label='train', color='b')
+    plt.plot(range(len(test_loss_vec)), test_loss_vec, label='test', color='r')
+    plt.legend(loc='best')
+    plt.title("Loss Plot")
+    plt.savefig('loss_plot.png')
+    plt.show()
+    plt.clf()
+
+    plt.plot(range(len(test_auc)), test_auc, label='test auc', color='b')
+    plt.title("AUC Plot")
+    plt.savefig('auc_plot.png')
+    plt.show()
     # auc
     auc = my_test(model, test_loader, loss_weights, device)
-
+    print(f"Final Auc: {auc}")
     # report final result
-    LOG.debug('Final result is: %d', auc)
-    nni.report_final_result(auc)
+    # LOG.debug('Final result is: %d', auc)
+    # nni.report_final_result(auc)
 
 except Exception as e:
     LOG.exception(e)

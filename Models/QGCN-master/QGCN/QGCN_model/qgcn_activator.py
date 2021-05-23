@@ -323,7 +323,8 @@ class QGCNActivator:
 
         # set train loader
         self._train_loader = DataLoader(
-            train.dataset,
+            # train.dataset,
+            train,
             batch_size=batch_size,
             collate_fn=train.dataset.collate_fn,
             shuffle=True
@@ -481,13 +482,13 @@ if __name__ == '__main__':
     from dataset.dataset_graphs_model import GraphsDataset
     
     # To run, choose one of these two codes - if you have external data choose the first one, else the second one
-    # print(__file__)
+    
     # If your data has an extenral information
     #params_file = "../params/default_binary_params.json"  # put here your params file
     params_file = "../params/microbiome_params.json"
     ext_train = ExternalData(params_file)
     ds = GraphsDataset(params_file, external_data=ext_train)
-    for i in range(10):
+    for i in range(1):
         date = datetime.today().strftime('%Y_%m_%d_%H_%M_%S')
         print("--------------------------------------------------------------------------------------------------------------")
         print(i)
