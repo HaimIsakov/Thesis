@@ -12,7 +12,7 @@
     "standardization": "zscore"},
 
   "model": {"label_type": "binary", "num_classes": 2, "use_embeddings": "False", "embeddings_dim": [],
-            "activation": "tanh_", "dropout": 0, "lr": 1e-4, "optimizer": "ADAM_", "L2_regularization":  1e-1,
+            "activation": "tanh_", "dropout": 0, "lr": 1e-4, "optimizer": "ADAM_", "L2_regularization":  1e-7,
             "L1_regularization": 1000 ,"f": "x1_x0",
             "GCN_layers": [
               {"in_dim": "None", "out_dim": 250},
@@ -20,6 +20,6 @@
               ]
   },
 
-  "activator" : {"epochs": 100, "batch_size": 124, "loss_func": "binary_cross_entropy_with_logits_",
+  "activator" : {"epochs": 500, "batch_size": 124, "loss_func": "binary_cross_entropy_with_logits_",
     "train": 0.675, "dev": 0.125, "test": 0.2}
 }

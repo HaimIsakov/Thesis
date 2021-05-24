@@ -329,7 +329,17 @@ class QGCNActivator:
             collate_fn=train.dataset.collate_fn,
             shuffle=True
         )
-        self._loss_weights = torch.Tensor([1 / count for label, count in
+
+        count_ones = 0
+        count_zeros = 0
+        for batch_index, (A, x0, embed, label) in enumerate(self._train_loader):
+            for i in label:
+                if i.item() == 1:
+                    count_ones += 1
+                if i.item() == 0:
+                    count_zeros += 1
+        self._loss_weights = torch.Tensor([1/count_zeros, 1/count_ones])
+        x = torch.Tensor([1 / count for label, count in
                                            sorted(list(train_dataset.label_count.items()), key=lambda x: x[0])])
         # set validation loader
         self._dev_loader = DataLoader(
@@ -488,7 +498,7 @@ if __name__ == '__main__':
     params_file = "../params/microbiome_params.json"
     ext_train = ExternalData(params_file)
     ds = GraphsDataset(params_file, external_data=ext_train)
-    for i in range(1):
+    for i in range(5):
         date = datetime.today().strftime('%Y_%m_%d_%H_%M_%S')
         print("--------------------------------------------------------------------------------------------------------------")
         print(i)

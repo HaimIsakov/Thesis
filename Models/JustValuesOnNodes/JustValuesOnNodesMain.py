@@ -33,7 +33,15 @@ try:
         batch_size=batch_size,
         shuffle=True
     )
-    count_zeros, count_ones = dataset.count_each_class()
+    count_ones = 0
+    count_zeros = 0
+    for batch_idx, (data, target) in enumerate(train_loader):
+        for i in target:
+            if i == 1:
+                count_ones += 1
+            if i == 0:
+                count_zeros += 1
+    # count_zeros, count_ones = dataset.count_each_class()
     loss_weights = [1 / count_zeros, 1 / count_ones]
     # set validation loader
     dev_loader = DataLoader(

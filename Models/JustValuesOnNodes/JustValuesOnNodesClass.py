@@ -57,7 +57,7 @@ def my_train(model, RECEIVED_PARAMS, epochs, train_loader, test_loader, device, 
             data, target = data.to(device), target.to(device)
             optimizer.zero_grad()
             net_out = model(data)
-            loss = F.binary_cross_entropy_with_logits(net_out, target.unsqueeze(dim=1).float(), weight=torch.Tensor([loss_weights[i].item() for i in target]).unsqueeze(dim=1).to(device))
+            loss = F.binary_cross_entropy_with_logits(net_out, target.unsqueeze(dim=1).float(), weight=torch.Tensor([loss_weights[i] for i in target]).unsqueeze(dim=1).to(device))
             loss.backward()
             optimizer.step()
         print(f"loss {loss.item()}")
@@ -89,7 +89,7 @@ def my_test(model, test_set, loss_weights, device):
         data, target = data.to(device), target.to(device)
         output = model(data)
         output = torch.sigmoid(output)
-        test_loss = F.binary_cross_entropy_with_logits(output, target.unsqueeze(dim=1).float(), weight=torch.Tensor([loss_weights[i].item() for i in target]).unsqueeze(dim=1).to(device))
+        test_loss = F.binary_cross_entropy_with_logits(output, target.unsqueeze(dim=1).float(), weight=torch.Tensor([loss_weights[i] for i in target]).unsqueeze(dim=1).to(device))
         for i in target:
             all_targets.append(i.item())
         output = output.squeeze()
