@@ -155,5 +155,6 @@ class QGCN(Module):
         else: # like "x1_x0"
             x2 = self._qgcn_last_layer(A, x0, x1)
 
-        x2 = torch.sigmoid(x2) if self._is_binary else self._softmax(x2)
+        # There is no need to apply sigmoid on train, because it is being applied automatically within the loss func
+        # x2 = torch.sigmoid(x2) if self._is_binary else self._softmax(x2)
         return x2

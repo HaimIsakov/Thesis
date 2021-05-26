@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import nni
 from time import sleep
 import sys
+from tqdm import tqdm
 
 f = open("curr_pwd", "wt")
 cwd = os.getcwd()
@@ -118,6 +119,7 @@ class QGCNActivator:
 
     # update accuracy after validating
     def _update_auc(self, pred, true, job=TRAIN_JOB):
+        pred = torch.sigmoid(pred)
         pred_ = [-1 if np.isnan(x) else x for x in pred]
         num_classes = len(Counter(true))
         if num_classes < 2:
@@ -140,11 +142,12 @@ class QGCNActivator:
 
     # update accuracy after validating
     def _update_accuracy_binary(self, pred, true, job=TRAIN_JOB):
+        pred = torch.sigmoid(pred)
         # calculate acc
         if job == TRAIN_JOB:
             max_acc = 0
             best_bar = self._bar
-            for bar in [i * 0.01 for i in range(100)]:
+            for bar in [r * 0.01 for r in range(100)]:
                 acc = sum([1 if (0 if i < bar else 1) == int(j) else 0 for i, j in zip(pred, true)]) / len(pred)
                 if acc > max_acc:
                     best_bar = bar
@@ -360,7 +363,7 @@ class QGCNActivator:
         self._init_loss_and_acc_vec()
         # calc number of iteration in current epoch
         len_data = len(self._train_loader)
-        for epoch_num in range(self._epochs):
+        for epoch_num in tqdm(range(self._epochs), desc='Training process'):
             if not self._nni:
                 print("epoch" + str(epoch_num))
 
@@ -433,7 +436,8 @@ class QGCNActivator:
                 self._print_progress(batch_index, len_data, job=VALIDATE_JOB)
             output = self._model(A, x0, embed)
             # calculate total loss
-            loss_count += self._loss_func(output, label.unsqueeze(dim=1).float()) if self._is_binary else \
+            loss_count += self._loss_func(output, label.unsqueeze(dim=1).float(), weight=torch.Tensor([self._loss_weights[i].item() for i in label]).unsqueeze(dim=1).to(device=self._device)
+                                          ) if self._is_binary else \
                     self._loss_func(output, label)
             true_labels += label.tolist()
             pred += output.squeeze(dim=1).tolist()
@@ -498,7 +502,7 @@ if __name__ == '__main__':
     params_file = "../params/microbiome_params.json"
     ext_train = ExternalData(params_file)
     ds = GraphsDataset(params_file, external_data=ext_train)
-    for i in range(5):
+    for i in range(10):
         date = datetime.today().strftime('%Y_%m_%d_%H_%M_%S')
         print("--------------------------------------------------------------------------------------------------------------")
         print(i)

@@ -11,35 +11,61 @@ import matplotlib.pyplot as plt
 
 
 # function from Ariel Rozen
+# def create_tax_tree(series, zeroflag=False):
+#     tempGraph = nx.Graph()
+#     """workbook = load_workbook(filename="random_Otus.xlsx")
+#     sheet = workbook.active"""
+#     valdict = {}
+#     bac = []
+#     for i, (tax, val) in enumerate(series.items()):
+#         # adding the bacteria in every column
+#         bac.append(Bacteria(tax, val))
+#         # connecting to the root of the tempGraph
+#         tempGraph.add_edge("anaerobe", (bac[i].lst[0],))
+#         # connecting all levels of the taxonomy
+#         for j in range(0, len(bac[i].lst) - 1):
+#             updateval(tempGraph, bac[i], valdict, j, True)
+#         # adding the value of the last node in the chain
+#         updateval(tempGraph, bac[i], valdict, len(bac[i].lst) - 1, False)
+#     valdict["anaerobe"] = valdict[("Bacteria",)] + valdict[("Archaea",)]
+#     return create_final_graph(tempGraph, valdict, zeroflag)
+#
+#
+# def updateval(graph, bac, vald, num, adde):
+#     if adde:
+#         graph.add_edge(tuple(bac.lst[:num + 1]), tuple(bac.lst[:num + 2]))
+#     # adding the value of the nodes
+#     if tuple(bac.lst[:num + 1]) in vald:
+#         vald[tuple(bac.lst[:num + 1])] += bac.val
+#     else:
+#         vald[tuple(bac.lst[:num + 1])] = bac.val
+
 def create_tax_tree(series, zeroflag=False):
     tempGraph = nx.Graph()
-    """workbook = load_workbook(filename="random_Otus.xlsx")
-    sheet = workbook.active"""
     valdict = {}
     bac = []
     for i, (tax, val) in enumerate(series.items()):
         # adding the bacteria in every column
         bac.append(Bacteria(tax, val))
         # connecting to the root of the tempGraph
-        tempGraph.add_edge("anaerobe", (bac[i].lst[0],))
+        tempGraph.add_edge("anaerobe", bac[i].lst[0])
         # connecting all levels of the taxonomy
         for j in range(0, len(bac[i].lst) - 1):
             updateval(tempGraph, bac[i], valdict, j, True)
         # adding the value of the last node in the chain
         updateval(tempGraph, bac[i], valdict, len(bac[i].lst) - 1, False)
-    valdict["anaerobe"] = valdict[("Bacteria",)] + valdict[("Archaea",)]
+    valdict["anaerobe"] = valdict["Bacteria"] + valdict["Archaea"]
     return create_final_graph(tempGraph, valdict, zeroflag)
 
 
 def updateval(graph, bac, vald, num, adde):
     if adde:
-        graph.add_edge(tuple(bac.lst[:num + 1]), tuple(bac.lst[:num + 2]))
+        graph.add_edge(bac.lst[num], bac.lst[num + 1])
     # adding the value of the nodes
-    if tuple(bac.lst[:num + 1]) in vald:
-        vald[tuple(bac.lst[:num + 1])] += bac.val
+    if bac.lst[num] in vald:
+        vald[bac.lst[num]] += bac.val
     else:
-        vald[tuple(bac.lst[:num + 1])] = bac.val
-
+        vald[bac.lst[num]] = bac.val
 
 def create_final_graph(tempGraph, valdict, zeroflag):
     graph = nx.Graph()
@@ -94,7 +120,8 @@ def return_microbiome_dict(all_moms_dataframe):
         cur_graph = create_tax_tree(all_moms_dataframe.iloc[i], zeroflag=True)
         nodes = cur_graph.nodes(data=False)
         for name, value in nodes:
-            if not j in microbiome_dict:
+            if name not in microbiome_dict:
+                # print(name)
                 microbiome_dict[name] = j
                 j = j + 1
     return microbiome_dict
@@ -113,9 +140,14 @@ def create_graph_files_for_qgcn_new(taxonomy_file_name, mapping_table_file_name,
     mapping_table_dataframe = load_tags_file(mapping_table_file_name)
 
     # we need to add column for each microbiome, in order to keep our one-hot vector idea
-    microbiome_dict = {}
     microbiome_dict = return_microbiome_dict(all_moms_dataframe)
     microbiom_len = len(microbiome_dict)
+
+    microbiom_len = len(microbiome_dict)
+    for r in range(microbiom_len):
+        external_data_header += f',{r}'
+    external_data_header += '\n'
+    external_data_file.write(external_data_header)
     # i = 0
     # for microbiome in all_moms_dataframe.columns:
     #     microbiome_dict[microbiome] = i
@@ -143,13 +175,6 @@ def create_graph_files_for_qgcn_new(taxonomy_file_name, mapping_table_file_name,
             #     j = j + 1
             line = f"{i},{microbiome_dict[name1]},{microbiome_dict[name2]},{label}\n"
             graph_csv_file.write(line)
-
-        if i == 0:
-            microbiom_len = len(microbiome_dict)
-            for r in range(microbiom_len):
-                external_data_header += f',{r}'
-            external_data_header += '\n'
-            external_data_file.write(external_data_header)
         for name, value in nodes:
             microbiome_id = microbiome_dict[name]
             line = f"{i},{microbiome_id}"
@@ -285,6 +310,7 @@ if __name__ == '__main__':
     path_data_dir = os.path.join("..", "israel")
     # OTU_merged_Mucositis.csv file is after MIP-MLP site
     taxonomy_file_name = os.path.join(path_data_dir, "OTU_merged_Mucositis_after_mipmlp_new.csv")
+    # taxonomy_file_name = os.path.join(path_data_dir, "OTU_merged_Mucositis.csv")
     mapping_table = os.path.join(path_data_dir, "israeli_stool_mapping_table.xlsx")
     # create_moms_list_for_files_for_qgcn(taxonomy_file_name, mapping_table, ready_pickle=False)
     # microbiome_dict = find_joint_nodes_set(mom_list)
