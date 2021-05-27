@@ -67,7 +67,7 @@ class QGCNActivator:
         self._params = self._params["activator"]
 
         self._gpu = torch.cuda.is_available()
-        self._device = torch.device("cuda:0" if self._gpu else "cpu")
+        self._device = torch.device("cuda:2" if self._gpu else "cpu")
         self._model = model.to(device=self._device)
         self._epochs = self._params["epochs"]
         self._batch_size = self._params["batch_size"]
