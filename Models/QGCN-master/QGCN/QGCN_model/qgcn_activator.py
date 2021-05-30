@@ -67,7 +67,7 @@ class QGCNActivator:
         self._params = self._params["activator"]
 
         self._gpu = torch.cuda.is_available()
-        self._device = torch.device("cuda:2" if self._gpu else "cpu")
+        self._device = torch.device("cuda:0" if self._gpu else "cpu")
         self._model = model.to(device=self._device)
         self._epochs = self._params["epochs"]
         self._batch_size = self._params["batch_size"]
@@ -119,7 +119,7 @@ class QGCNActivator:
 
     # update accuracy after validating
     def _update_auc(self, pred, true, job=TRAIN_JOB):
-        pred = torch.sigmoid(pred)
+        pred = torch.sigmoid(torch.Tensor(pred)).tolist()
         pred_ = [-1 if np.isnan(x) else x for x in pred]
         num_classes = len(Counter(true))
         if num_classes < 2:
@@ -142,7 +142,7 @@ class QGCNActivator:
 
     # update accuracy after validating
     def _update_accuracy_binary(self, pred, true, job=TRAIN_JOB):
-        pred = torch.sigmoid(pred)
+        pred = torch.sigmoid(torch.Tensor(pred)).tolist()
         # calculate acc
         if job == TRAIN_JOB:
             max_acc = 0
@@ -363,7 +363,7 @@ class QGCNActivator:
         self._init_loss_and_acc_vec()
         # calc number of iteration in current epoch
         len_data = len(self._train_loader)
-        for epoch_num in tqdm(range(self._epochs), desc='Training process'):
+        for epoch_num in range(self._epochs):
             if not self._nni:
                 print("epoch" + str(epoch_num))
 
@@ -479,7 +479,7 @@ class QGCNActivator:
             plt.savefig(os.path.join(root, f'auc_plot_{date}_max_{round(max_auc_test, 2)}.png'))
             plt.clf()
 
-    def plot_acc_loss_auc(self, root, date, save_model=True):
+    def plot_acc_loss_auc(self, root, date, params_file, save_model=True):
         root = os.path.join(root, f'Qgcn_model_{date}')
         os.mkdir(root)
         self.plot_measurement(root, date, LOSS_PLOT)
@@ -502,7 +502,7 @@ if __name__ == '__main__':
     params_file = "../params/microbiome_params.json"
     ext_train = ExternalData(params_file)
     ds = GraphsDataset(params_file, external_data=ext_train)
-    for i in range(10):
+    for i in range(5):
         date = datetime.today().strftime('%Y_%m_%d_%H_%M_%S')
         print("--------------------------------------------------------------------------------------------------------------")
         print(i)
@@ -511,7 +511,7 @@ if __name__ == '__main__':
         print("start training")
         activator.train(show_plot=False, early_stop=False)
         root_for_results = os.path.abspath(os.path.join(__file__, "../../../../../Results/QGCN"))
-        activator.plot_acc_loss_auc(root_for_results, date, save_model=False)
+        activator.plot_acc_loss_auc(root_for_results, date, params_file, save_model=False)
 
     # If your data does not have external information
     # params_file = "../params/default_no_external_data_params.json"  # put here your params file

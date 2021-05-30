@@ -122,14 +122,14 @@ class GraphsDataset(Dataset):
             if index > stop:
                 break
             # write edge to dictionary
-            if type(edge[self._params["graph_col"]]) is np.float64:
-                graph_id = str(int(edge[self._params["graph_col"]]))
-                src = str(int(edge[self._params["src_col"]]))
-                dst = str(int(edge[self._params["dst_col"]]))
-            else:
-                graph_id = str(edge[self._params["graph_col"]])
-                src = str(edge[self._params["src_col"]])
-                dst = str(edge[self._params["dst_col"]])
+            # if type(edge[self._params["graph_col"]]) is np.float64:
+            #     graph_id = str(int(edge[self._params["graph_col"]]))
+            #     src = str(int(edge[self._params["src_col"]]))
+            #     dst = str(int(edge[self._params["dst_col"]]))
+            # else:
+            graph_id = str(edge[self._params["graph_col"]])
+            src = str(edge[self._params["src_col"]])
+            dst = str(edge[self._params["dst_col"]])
 
             multi_graph_dict[graph_id] = multi_graph_dict.get(graph_id, []) + [(src, dst)]
             label = edge[self._params["label_col"]]
@@ -240,6 +240,9 @@ class GraphsDataset(Dataset):
         elif self._params["adjacency_norm"] == RAW_FORM:
             # don't do any normalization
             adjacency = A
+        elif self._params["adjacency_norm"] == "Haim":
+            adjacency = np.matrix(A) + 10 * np.eye(len(A))
+
         else:
             print("Error in adjacency_norm: " + self._params["adjacency_norm"] + "is not a valid option")
             exit(1)

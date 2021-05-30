@@ -77,7 +77,7 @@ class ExternalData:
         value_dict = {} if self._params["continuous"] else None
 
         # handle external data (several types of features)
-        pd.set_option('display.max_rows', 500)
+        # pd.set_option('display.max_rows', 500)
         external_data_df = pd.read_csv(self._params["file_path"])
         # external_data_df[self._params["graph_col"]] = external_data_df[self._params["graph_col"]].astype(int).astype(str)
         # external_data_df[self._params["node_col"]] = external_data_df[self._params["node_col"]].astype(int).astype(str)
@@ -88,8 +88,8 @@ class ExternalData:
             g_id = str(int(data[self._params["graph_col"]]))
             node = str(int(data[self._params["node_col"]]))
             #
-            #g_id = str(data[self._params["graph_col"]])
-            #node = str(data[self._params["node_col"]])
+            # g_id = str(data[self._params["graph_col"]])
+            # node = str(data[self._params["node_col"]])
 
             # extract embeddings + keep list idx to embed symbol for each feature
             embed_list = []

@@ -41,7 +41,7 @@ class GCN(Module):
 
         x = self._linear(Ax)
         x1 = self._activation(x) - 2/(x**2+1)
-        
+        # x1 = self._activation(x)
         return x1
     
 
