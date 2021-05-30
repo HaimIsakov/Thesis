@@ -13,6 +13,7 @@ import nni
 from time import sleep
 import sys
 from tqdm import tqdm
+from shutil import copyfile
 
 f = open("curr_pwd", "wt")
 cwd = os.getcwd()
@@ -482,6 +483,7 @@ class QGCNActivator:
     def plot_acc_loss_auc(self, root, date, params_file, save_model=True):
         root = os.path.join(root, f'Qgcn_model_{date}')
         os.mkdir(root)
+        copyfile(params_file, os.path.join(root, "params_file.json"))
         self.plot_measurement(root, date, LOSS_PLOT)
         self.plot_measurement(root, date, ACCURACY_PLOT)
         self.plot_measurement(root, date, AUC_PLOT)
@@ -494,25 +496,41 @@ class QGCNActivator:
 if __name__ == '__main__':
     from dataset.dataset_external_data import ExternalData
     from dataset.dataset_graphs_model import GraphsDataset
-    
+
+    external_data = False
     # To run, choose one of these two codes - if you have external data choose the first one, else the second one
     
     # If your data has an extenral information
     #params_file = "../params/default_binary_params.json"  # put here your params file
-    params_file = "../params/microbiome_params.json"
-    ext_train = ExternalData(params_file)
-    ds = GraphsDataset(params_file, external_data=ext_train)
-    for i in range(5):
-        date = datetime.today().strftime('%Y_%m_%d_%H_%M_%S')
-        print("--------------------------------------------------------------------------------------------------------------")
-        print(i)
-        model = QGCN(params_file, ds.len_features, ext_train.len_embed())
-        activator = QGCNActivator(model, params_file, ds)
-        print("start training")
-        activator.train(show_plot=False, early_stop=False)
-        root_for_results = os.path.abspath(os.path.join(__file__, "../../../../../Results/QGCN"))
-        activator.plot_acc_loss_auc(root_for_results, date, params_file, save_model=False)
+    if external_data:
+        params_file = "../params/microbiome_params.json"
+        ext_train = ExternalData(params_file)
+        ds = GraphsDataset(params_file, external_data=ext_train)
+        for i in range(10):
+            date = datetime.today().strftime('%Y_%m_%d_%H_%M_%S')
+            print("--------------------------------------------------------------------------------------------------------------")
+            print(i)
+            model = QGCN(params_file, ds.len_features, ext_train.len_embed())
+            activator = QGCNActivator(model, params_file, ds)
+            print("start training")
+            activator.train(show_plot=False, early_stop=False)
+            root_for_results = os.path.abspath(os.path.join(__file__, "../../../../../Results/QGCN"))
+            activator.plot_acc_loss_auc(root_for_results, date, params_file, save_model=False)
 
+    else:
+        params_file = "../params/microbiome_params.json"
+        ds = GraphsDataset(params_file, external_data=None)
+        for i in range(10):
+            date = datetime.today().strftime('%Y_%m_%d_%H_%M_%S')
+            print(
+                "--------------------------------------------------------------------------------------------------------------")
+            print(i)
+            model = QGCN(params_file, ds.len_features, [10])
+            activator = QGCNActivator(model, params_file, ds)
+            print("start training")
+            activator.train(show_plot=False, early_stop=False)
+            root_for_results = os.path.abspath(os.path.join(__file__, "../../../../../Results/QGCN"))
+            activator.plot_acc_loss_auc(root_for_results, date, params_file, save_model=False)
     # If your data does not have external information
     # params_file = "../params/default_no_external_data_params.json"  # put here your params file
     # ds = GraphsDataset(params_file, external_data=None)

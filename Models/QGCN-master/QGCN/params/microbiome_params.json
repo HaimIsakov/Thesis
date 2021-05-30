@@ -3,7 +3,7 @@
 
   "external": {"file_path": "../data/external_data_genus_for_qgcn_lite.csv",
     "graph_col": "g_id", "node_col": "node",
-    "embeddings": [], "continuous": ["value"]},
+    "embeddings": [], "continuous": []},
 
   "graphs_data": {"file_path": "../data/graph_data_genus_for_qgcn_lite.csv",
     "graph_col": "g_id", "src_col": "src", "dst_col": "dst", "label_col": "label", "directed": "False",
@@ -11,7 +11,7 @@
     "standardization": "zscore"},
 
   "model": {"label_type": "binary", "num_classes": 2, "use_embeddings": "False", "embeddings_dim": [],
-            "activation": "tanh_", "dropout": 0.3, "lr": 1e-4, "optimizer": "ADAM_", "L2_regularization":  1e-8,
+            "activation": "tanh_", "dropout": 0, "lr": 1e-6, "optimizer": "ADAM_", "L2_regularization":  1e-8,
             "L1_regularization": 1000 ,"f": "x1_x0",
             "GCN_layers": [
               {"in_dim": "None", "out_dim": 250},
@@ -21,4 +21,4 @@
 
   "activator" : {"epochs": 100, "batch_size": 124, "loss_func": "binary_cross_entropy_with_logits_",
     "train": 0.675, "dev": 0.125, "test": 0.2}
-}
+} 
